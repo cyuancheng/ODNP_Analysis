@@ -1,0 +1,45 @@
+---
+title: "T1 inversion recovery data analysis"
+author: "ccheng"
+date: "January 4, 2016"
+output: html_document
+---
+
+T1 inversion recovery data analysis
+
+```{r, echo=FALSE}
+# load libraries
+library(ggplot2) #library for plotting
+library(reshape2) # library for reshaping data (tall-narrow <-> short-wide)
+library(minpack.lm) # library for least squares fit using levenberg-marquart algorithm
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+setwd("~/Documents/Programs/ODNP_Analysis/Rstudio")
+#load T1 data
+df=read.csv(file="t1Integral101.csv", header=TRUE, sep=',')
+names(df)=c("Integral","Error","Delay")
+df1 <- df[c("Delay", "Integral")]
+MaxIntegral = df1$Integral[length(df1$Integral)] # find max abs value for integral
+df1$Integral <- df1$Integral/MaxIntegral # normalization
+```
+
+Plot data
+```{r}
+
+ggplot(data=df1,aes(x=Delay,y=Integral))+geom_point(size=3)
+```
+
+define T1 function and fit the data
+
+```{r}
+f_T1 <- function(t, a, T1) {
+    1-2*a*exp(-t/T1)
+}
+
+#fit <- nls(y~f(x,a,b,c), data=data.frame(mydata), start=list(a=1, b=30, c=-0.3))
+
+```
+
