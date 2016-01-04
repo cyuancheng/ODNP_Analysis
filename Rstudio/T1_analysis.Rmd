@@ -12,7 +12,7 @@ library(ggplot2) #library for plotting
 ```
 
 load data
-```{r, echo=FALSE}
+```{r}
 setwd("~/Documents/Programs/ODNP_Analysis/Rstudio")
 #load T1 data
 df=read.csv(file="t1Integral101.csv", header=TRUE, sep=',')
@@ -44,10 +44,12 @@ time_fitted <- seq(0, MaxDelay*1.15, MaxDelay*1.15/50)
 fitted.data <- data.frame(x=time_fitted, y=predict(fit, list(Delay = time_fitted)))
 
 # plot
-ggplot(df1,aes(x=Delay,y=Integral)) + geom_point(color="red", size=3) + scale_x_continuous(breaks=1:10) + xlab("delay (s)")+ylab("abs integral")
+ggplot(df1,aes(x=Delay,y=Integral)) + geom_point(color="red", size=3) + scale_x_continuous(breaks=1:10) + xlab("delay (s)")+ylab("peak integral")
 
 last_plot() + geom_line(data = fitted.data, aes(x=x, y=y), color ='blue', alpha=.5) 
 
+# T1 data and standard deviation of T1
 T1 <- parameter.est$T1
 T1_SD <- summary(fit)$coef[[6]]
 ```
+
