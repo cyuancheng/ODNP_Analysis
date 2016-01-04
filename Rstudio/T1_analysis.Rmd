@@ -19,18 +19,20 @@ df=read.csv(file="t1Integral101.csv", header=TRUE, sep=',')
 names(df)=c("Integral","Error","Delay")
 df1 <- df[c("Delay", "Integral")]
 MaxIntegral <- df1$Integral[length(df1$Integral)] # find max abs value for integral
+MaxIntegral.abs <- abs(MaxIntegral) # absolute value
+
 MaxDelay <- df1$Delay[length(df1$Integral)]
-df1$Integral <- df1$Integral/MaxIntegral # normalization
+df1$Integral <- df1$Integral/MaxIntegral*MaxIntegral.abs # normalization
 ```
 
 define T1 function and fit the data
 
 ```{r}
-f_T1 <- function(t, a, T1) {
-    1-2*a*exp(-t/T1)
+f_T1 <- function(t, a,b, T1) {
+    b-2*a*exp(-t/T1)
 }
 
-fit <- nls(Integral~f_T1(Delay,a,T1), data=df1, start=list(a=1, T1=1))
+fit <- nls(Integral~f_T1(Delay,a,b,T1), data=df1, start=list(a=MaxIntegral.abs, b=MaxIntegral.abs, T1=1))
 summary(fit)
 parameter.est <- as.list(coef(fit))
 ```
@@ -47,5 +49,5 @@ ggplot(df1,aes(x=Delay,y=Integral)) + geom_point(color="red", size=3) + scale_x_
 last_plot() + geom_line(data = fitted.data, aes(x=x, y=y), color ='blue', alpha=.5) 
 
 T1 <- parameter.est$T1
-T1_SD <- summary(fit)$coef[[4]]
+T1_SD <- summary(fit)$coef[[6]]
 ```
