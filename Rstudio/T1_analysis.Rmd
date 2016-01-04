@@ -8,14 +8,10 @@ output: html_document
 T1 inversion recovery data analysis
 
 ```{r, echo=FALSE}
-# load libraries
 library(ggplot2) #library for plotting
-library(reshape2) # library for reshaping data (tall-narrow <-> short-wide)
-library(minpack.lm) # library for least squares fit using levenberg-marquart algorithm
 ```
 
-You can also embed plots, for example:
-
+load data
 ```{r, echo=FALSE}
 setwd("~/Documents/Programs/ODNP_Analysis/Rstudio")
 #load T1 data
@@ -25,12 +21,6 @@ df1 <- df[c("Delay", "Integral")]
 MaxIntegral <- df1$Integral[length(df1$Integral)] # find max abs value for integral
 MaxDelay <- df1$Delay[length(df1$Integral)]
 df1$Integral <- df1$Integral/MaxIntegral # normalization
-```
-
-Plot data
-```{r}
-
-ggplot(data=df1,aes(x=Delay,y=Integral))+geom_point(size=3)
 ```
 
 define T1 function and fit the data
@@ -48,7 +38,6 @@ parameter.est <- as.list(coef(fit))
 plot
 ```{r}
 # simulated predicted profile at estimated parameter values
-
 time_fitted <- seq(0, MaxDelay*1.15, MaxDelay*1.15/50)
 fitted.data <- data.frame(x=time_fitted, y=predict(fit, list(Delay = time_fitted)))
 
@@ -58,5 +47,5 @@ ggplot(df1,aes(x=Delay,y=Integral)) + geom_point(color="red", size=3) + scale_x_
 last_plot() + geom_line(data = fitted.data, aes(x=x, y=y), color ='blue', alpha=.5) 
 
 T1 <- parameter.est$T1
-T1
+T1_SD <- summary(fit)$coef[[4]]
 ```
