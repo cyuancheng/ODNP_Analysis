@@ -11,8 +11,8 @@ T1 inversion recovery data analysis
 library(ggplot2) #library for plotting
 ```
 
-load data
-```{r}
+
+```{r dataload, echo=FALSE}
 setwd("~/Documents/Programs/ODNP_Analysis/Rstudio")
 #load T1 data
 df=read.csv(file="t1Integral101.csv", header=TRUE, sep=',')
@@ -25,31 +25,32 @@ MaxDelay <- df1$Delay[length(df1$Integral)]
 df1$Integral <- df1$Integral/MaxIntegral*MaxIntegral.abs # normalization
 ```
 
-define T1 function and fit the data
 
-```{r}
+```{r T1_function, echo=FALSE}
+# define T1 function and fit the data
 f_T1 <- function(t, a,b, T1) {
     b-2*a*exp(-t/T1)
 }
 
+#non-least squared fit
 fit <- nls(Integral~f_T1(Delay,a,b,T1), data=df1, start=list(a=MaxIntegral.abs, b=MaxIntegral.abs, T1=1))
-summary(fit)
+
+#summary(fit)
 parameter.est <- as.list(coef(fit))
 ```
 
-plot
-```{r}
+
+```{r plot, echo=FALSE, fig.width=4, fig.height=3}
 # simulated predicted profile at estimated parameter values
 time_fitted <- seq(0, MaxDelay*1.15, MaxDelay*1.15/50)
 fitted.data <- data.frame(x=time_fitted, y=predict(fit, list(Delay = time_fitted)))
 
 # plot
-ggplot(df1,aes(x=Delay,y=Integral)) + geom_point(color="red", size=3) + scale_x_continuous(breaks=1:10) + xlab("delay (s)")+ylab("peak integral")
-
-last_plot() + geom_line(data = fitted.data, aes(x=x, y=y), color ='blue', alpha=.5) 
+ggplot(df1,aes(x=Delay,y=Integral)) + geom_point(color="red", size=3) + scale_x_continuous(breaks=1:10) + xlab("delay (s)")+ylab("peak integral") + geom_line(data = fitted.data, aes(x=x, y=y), color ='blue', alpha=.5) 
 
 # T1 data and standard deviation of T1
 T1 <- parameter.est$T1
+message("T1 = ", round(T1, digits=3)," s") 
 T1_SD <- summary(fit)$coef[[6]]
+message("T1 (SD) = ", round(T1_SD, digits=3)," s")
 ```
-
