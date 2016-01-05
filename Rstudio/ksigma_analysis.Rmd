@@ -14,6 +14,9 @@ library(ggplot2) #library for plotting
 
 ```{r dataload, echo=FALSE}
 setwd("~/Documents/Programs/ODNP_Analysis/Rstudio")
+#spin-label concentration
+CSL = 500*10^-6 # in Molar
+
 #load Emax data 
 df_Emax=read.csv(file="Emax.csv", header=TRUE, sep=',')
 names(df_Emax)=c("Power","Integral")
@@ -32,10 +35,10 @@ MaxPower_T1 <- max(df_T1p$Power_T1)
 #T10_data
 T10 <- df_T1$T1p[length(df_T1$T1p)]
 T10_SD <- df_T1$T1p_error[length(df_T1$T1p)]
+
 ```
 
 ```{r temp_calibration, echo=FALSE}
-ggplot(data=df_T1p, aes(x=Power_T1, y=T1p)) + geom_point()
 
 lm.cor = cor(df_T1p$Power_T1,df_T1p$T1p) # linear correlation
 
@@ -67,48 +70,71 @@ ggplot(power_x, aes(x = Power_T1, y = fit)) +
 ```
 
 
-```{r EmaxFunction, echo=FALSE}
-# function for NMR enhancement
-f_E <- function(I0, A, B, P) {
-    I0 - A*P/(1 + B*P)
+```{r krho, echo=FALSE}
+# function for krho
+f_krho <- function(T1, T10, CSL) {
+    (1/T1-1/T10)/CSL
 }
-# function for Emax
-f_Emax <- function(I0, A, B){
-    I0 - A/B  
-}
-
-fit_E <- nls(Integral~f_E(I0, A, B, Power), data=df_Emax, start=list(I0 =1, A=1, B=1))
-#summary(fit_E)
-parameter.est <- as.list(coef(fit_E))
-
+krho <- f_krho(df_T1p$T1p[1],T10,CSL) # in 1/M/sec
 ```
 
 
-```{r plot, echo=FALSE, fig.width=4, fig.height=3}
+```{r ksigmaPlot, echo=FALSE}
+# function for ksigma
+f_sigma <- function(En, CSL, T1cor) {
+    (1-En)/CSL/T1cor/658
+}
+
+# function for ksigma*smax
+f_sigmasmax <-  function(A, B, P) {
+    A*P/(B+P)
+}
+
+Power_T1_list <- data.frame(Power_T1=df_Emax$Power)
+T1cor <- predict(lmfit, newdata=Power_T1_list)
+
+ksigma_list <- f_sigma(df_Emax$Integral, CSL, T1cor)
+
+df_ksigma <- data.frame(Power=df_Emax$Power, ksigma = ksigma_list)
+  
+ggplot(df_ksigma,aes(x=Power,y=ksigma)) + geom_point(color="red", size=3)
+
+fit_ksimga <- nls(ksigma ~ f_sigmasmax(A, B, Power), data=df_ksigma, start=list(A=100, B=1))
+
+#summary(fit_ksimga)
+parameter.est <- as.list(coef(fit_ksimga))
+
 # simulated predicted profile at estimated parameter values
-power_fitted <- seq(0, MaxPower*1.15, MaxPower*1.15/50)
-fitted.data <- data.frame(x=power_fitted, y=predict(fit_E, list(Power = power_fitted )))
+power_1 <- seq(0, max(df_ksigma$Power)*1.1, max(df_ksigma$Power)*1.1/50)
+fitted.ksigma <- data.frame(x=power_1, y=predict(fit_ksimga, list(Power = power_1 )))
 
 # plot
-ggplot(df_Emax,aes(x=Power,y=Integral)) + geom_point(color="red", size=3) + scale_x_continuous(breaks=1:10) + xlab("Power (Watt)")+ylab("peak integral") + geom_line(data = fitted.data, aes(x=x, y=y), color ='blue', alpha=.5) 
+ggplot(df_ksigma,aes(x=Power,y=ksigma)) + 
+  geom_point(color="red", size=3) + 
+  scale_x_continuous(breaks=1:10) + 
+  xlab("Power (Watt)")+ylab("ksigma*smax") + 
+  geom_line(data = fitted.ksigma, aes(x=x, y=y), color ='blue', alpha=.5) 
 
-# Emax data and standard deviation of Emax
+# ksigma data and standard deviation of ksigma
 
-Emax <- f_Emax(parameter.est$I0, parameter.est$A, parameter.est$B)
+ksigma<- parameter.est$A
 
-message("Emax = ", round(Emax, digits=3)) 
+message("ksigma = ", round(ksigma, digits=3) , " 1/M/sec") 
 
-#I0 <- summary(fit_Emax)$coef[[1]]
-#A <- summary(fit_Emax)$coef[[2]]
-#B <- summary(fit_Emax)$coef[[2]]
-#I0_SD <- summary(fit_Emax)$coef[[4]]
-#A_SD <-summary(fit_Emax)$coef[[5]]
-#B_SD <- summary(fit_Emax)$coef[[6]]
+```
 
-#Emax_SD <- ((D(expression(I0 - A/B), "I0")*summary(fit_Emax)$coef[[4]])^2 #+(D(expression(I0 - A/B), "A")*summary(fit_Emax)$coef[[5]])^2 +(D(expression(I0 - A/B), #"B")*summary(fit_Emax)$coef[[6]])^2)^0.5
+```{r klow, echo=FALSE }
 
-#f_E_SD <- function(I0, A, B) {
-#  ((D(expression(I0 - A/B), "I0")*I0_SD)^2 +(D(expression(I0 - A/B), "A")*A_SD)^2 #+(D(expression(I0 - A/B), "B")*B_SD)^2)^0.5
-#}
+# function klow
+f_klow <-  function(krho, ksimga) {
+    (5/3)*krho - (7/3)*ksigma
+}
+
+klow = f_klow(krho,ksigma)
+klow
+```
+
+```{r rho, echo=FALSE}
+
 
 ```
