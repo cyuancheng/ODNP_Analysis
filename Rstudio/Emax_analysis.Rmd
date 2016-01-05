@@ -46,7 +46,11 @@ power_fitted <- seq(0, MaxPower*1.15, MaxPower*1.15/50)
 fitted.data <- data.frame(x=power_fitted, y=predict(fit_E, list(Power = power_fitted )))
 
 # plot
-ggplot(df_Emax,aes(x=Power,y=Integral)) + geom_point(color="red", size=3) + scale_x_continuous(breaks=1:10) + xlab("Power (Watt)")+ylab("peak integral") + geom_line(data = fitted.data, aes(x=x, y=y), color ='blue', alpha=.5) 
+ggplot(df_Emax,aes(x=Power,y=Integral)) + 
+  geom_point(color="red", size=3) + 
+  scale_x_continuous(breaks=1:10) + 
+  xlab("Power (Watt)")+ylab("peak integral") + 
+  geom_line(data = fitted.data, aes(x=x, y=y), color ='blue', alpha=.5) 
 
 # Emax data and standard deviation of Emax
 
